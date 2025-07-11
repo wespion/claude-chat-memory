@@ -22,32 +22,15 @@ module.exports = async (req, res) => {
     // Claude로 채팅 내용 분석
     const response = await anthropic.messages.create({
       model: "claude-3-haiku-20240307",
-      max_tokens: 1000,
+      max_tokens: 500,
       messages: [{
   role: "user",
-  content: `다음 대화를 시간순으로 분석하여 주요 진행과정, 기술적 문제와 해결책을 중심으로 정리해주세요:
+  content: `다음 내용을 JSON으로 분석해주세요:
 
-대화 내용:
-${content}
+${content.substring(0, 2000)}
 
-분석할 때 다음을 포함해주세요:
-1. 전체 프로젝트의 목적과 목표
-2. 사용된 주요 기술 스택들  
-3. 발생한 문제들과 해결 방법
-4. 최종 성취한 결과
-5. 핵심 배운 점들
-
-JSON 형식으로만 반환하세요:
-{
-  "title": "프로젝트 제목 (목적 중심으로)",
-  "summary": "시간순 진행과정과 주요 성과 (300자 이내)", 
-  "category": "tech|project|career|study|personal|other 중 하나",
-  "tags": ["구체적인 기술명과 키워드들"],
-  "key_insights": ["기술적 배운점과 중요한 발견들"],
-  "action_items": ["완성된 것과 다음 할 일들"]
-}
-
-JSON만 반환하고 다른 설명은 하지 마세요.`
+JSON 형식:
+{"title": "제목", "summary": "요약", "category": "tech", "tags": ["키워드"], "key_insights": ["인사이트"], "action_items": ["할일"]}`
 }]
     });
 
