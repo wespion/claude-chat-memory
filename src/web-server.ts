@@ -206,6 +206,37 @@ app.get('/api/chats/:id', async (req, res) => {
   }
 });
 
+// 북마클릿용 POST 엔드포인트
+app.post('/api/save-from-bookmarklet', async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    
+    // HTML 페이지에 데이터 미리 입력해서 반환
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <script>
+        window.onload = function() {
+          window.opener.postMessage({
+            type: 'BOOKMARKLET_DATA',
+            title: ${JSON.stringify(title)},
+            content: ${JSON.stringify(content)}
+          }, 'https://claude-chat-memory-mm1l.vercel.app');
+          window.close();
+        }
+      </script>
+    </head>
+    <body>데이터 전송 중...</body>
+    </html>`;
+    
+    res.send(html);
+  } catch (error) {
+    res.status(500).send('오류가 발생했습니다.');
+  }
+});
+
 // 서버 시작
 app.listen(PORT, () => {
   console.log(`🚀 서버가 http://localhost:${PORT} 에서 실행 중입니다!`);
