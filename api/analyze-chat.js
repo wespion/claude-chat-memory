@@ -24,24 +24,31 @@ module.exports = async (req, res) => {
       model: "claude-3-haiku-20240307",
       max_tokens: 1000,
       messages: [{
-        role: "user",
-        content: `다음 Claude 채팅 내용을 분석해서 JSON 형태로 반환해주세요:
+  role: "user",
+  content: `다음 대화를 시간순으로 분석하여 주요 진행과정, 기술적 문제와 해결책을 중심으로 정리해주세요:
 
-채팅 내용:
+대화 내용:
 ${content}
 
-다음 형식으로 분석해주세요:
+분석할 때 다음을 포함해주세요:
+1. 전체 프로젝트의 목적과 목표
+2. 사용된 주요 기술 스택들  
+3. 발생한 문제들과 해결 방법
+4. 최종 성취한 결과
+5. 핵심 배운 점들
+
+JSON 형식으로만 반환하세요:
 {
-  "title": "적절한 제목 (50자 이내)",
-  "summary": "핵심 내용 요약 (200자 이내)", 
-  "category": "career|tech|personal|study|project|other 중 하나",
-  "tags": ["관련", "키워드", "배열"],
-  "key_insights": ["핵심 깨달음이나 인사이트들"],
-  "action_items": ["실행해야 할 구체적인 액션 아이템들"]
+  "title": "프로젝트 제목 (목적 중심으로)",
+  "summary": "시간순 진행과정과 주요 성과 (300자 이내)", 
+  "category": "tech|project|career|study|personal|other 중 하나",
+  "tags": ["구체적인 기술명과 키워드들"],
+  "key_insights": ["기술적 배운점과 중요한 발견들"],
+  "action_items": ["완성된 것과 다음 할 일들"]
 }
 
 JSON만 반환하고 다른 설명은 하지 마세요.`
-      }]
+}]
     });
 
     const analysisText = response.content[0].text;
