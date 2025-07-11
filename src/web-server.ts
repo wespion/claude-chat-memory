@@ -259,7 +259,7 @@ app.post('/api/analyze-chat', async (req, res) => {
 
     // GPT로 채팅 내용 분석
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       messages: [{
         role: "user",
         content: `다음 Claude 채팅 내용을 분석해서 JSON 형태로 반환해주세요:
@@ -283,7 +283,20 @@ JSON만 반환하고 다른 설명은 하지 마세요.`
     });
 
     const analysisText = response.choices[0].message.content;
-    const analysis = JSON.parse(analysisText);
+    let analysis;
+try {
+  analysis = JSON.parse(analysisText);
+} catch (parseError) {
+  // JSON 파싱 실패 시 기본값
+  analysis = {
+    title: "AI 분석 제목",
+    summary: "AI 분석 요약", 
+    category: "other",
+    tags: ["AI", "분석"],
+    key_insights: ["AI 분석 중 오류 발생"],
+    action_items: ["수동으로 내용을 정리해주세요"]
+  };
+}
     
     res.json({
       success: true,
