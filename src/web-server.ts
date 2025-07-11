@@ -244,3 +244,58 @@ app.listen(PORT, () => {
   console.log(`🔍 채팅 검색: GET /api/search-chats?q=검색어`);
   console.log(`📋 채팅 목록: GET /api/chats`);
 });
+
+// AI 자동 분석 엔드포인트
+app.post('/api/analyze-chat', async (req, res) => {
+  try {
+    const { content } = req.body;
+    
+    if (!content) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '분석할 내용이 필요합니다.' 
+      });
+    }
+
+    // GPT로 채팅 내용 분석
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{
+        role: "user",
+        content: `다음 Claude 채팅 내용을 분석해서 JSON 형태로 반환해주세요:
+
+채팅 내용:
+${content}
+
+다음 형식으로 분석해주세요:
+{
+  "title": "적절한 제목 (50자 이내)",
+  "summary": "핵심 내용 요약 (200자 이내)", 
+  "category": "career|tech|personal|study|project|other 중 하나",
+  "tags": ["관련", "키워드", "배열"],
+  "key_insights": ["핵심 깨달음이나 인사이트들"],
+  "action_items": ["실행해야 할 구체적인 액션 아이템들"]
+}
+
+JSON만 반환하고 다른 설명은 하지 마세요.`
+      }],
+      temperature: 0.3
+    });
+
+    const analysisText = response.choices[0].message.content;
+    const analysis = JSON.parse(analysisText);
+    
+    res.json({
+      success: true,
+      message: 'AI 분석이 완료되었습니다.',
+      data: analysis
+    });
+  } catch (error) {
+    console.error('AI 분석 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: 'AI 분석 중 오류가 발생했습니다.',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
