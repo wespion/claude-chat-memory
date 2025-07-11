@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude 채팅 메모리</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            min-height: 600px;
+        }
+        
+        .save-section, .search-section {
+            padding: 30px;
+        }
+        
+        .save-section {
+            border-right: 1px solid #e5e7eb;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .tags-input {
+            background: #f9fafb;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .search-input {
+            margin-bottom: 15px;
+        }
+        
+        .results {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+        
+        .result-item {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .result-item:hover {
+            background: #f3f4f6;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+        
+        .result-summary {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .result-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        
+        .similarity {
+            background: #4f46e5;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .save-section {
+                border-right: none;
+                border-bottom: 1px solid #e5e7eb;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Claude 채팅 메모리</h1>
+            <p>채팅을 저장하고 관련 대화를 쉽게 찾아보세요</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- 저장 섹션 -->
+            <div class="save-section">
+                <h2 class="section-title">💾 채팅 저장</h2>
+                
+                <div id="saveStatus" class="status hidden"></div>
+                
+                <form id="saveForm">
+                    <div class="form-group">
+                        <label for="title">제목 *</label>
+                        <input type="text" id="title" required placeholder="예: 진로 고민 - 개발 vs 기획">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="content">채팅 내용 *</label>
+                        <textarea id="content" required placeholder="전체 채팅 대화를 붙여넣어 주세요..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="summary">요약</label>
+                        <textarea id="summary" placeholder="채팅 내용을 간단히 요약해주세요..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="category">카테고리</label>
+                        <select id="category">
+                            <option value="">선택하세요</option>
+                            <option value="career">진로</option>
+                            <option value="tech">기술</option>
+                            <option value="personal">개인</option>
+                            <option value="study">학습</option>
+                            <option value="project">프로젝트</option>
+                            <option value="other">기타</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tags">태그</label>
+                        <input type="text" id="tags" class="tags-input" placeholder="태그1, 태그2, 태그3 (쉼표로 구분)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="insights">핵심 인사이트</label>
+                        <textarea id="insights" placeholder="대화에서 얻은 핵심 깨달음들을 줄바꿈으로 구분해서 입력하세요..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="actions">액션 아이템</label>
+                        <textarea id="actions" placeholder="실행해야 할 일들을 줄바꿈으로 구분해서 입력하세요..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">💾 저장하기</button>
+                </form>
+            </div>
+            
+            <!-- 검색 섹션 -->
+            <div class="search-section">
+                <h2 class="section-title">🔍 채팅 검색</h2>
+                
+                <div class="form-group">
+                    <label for="searchQuery">검색어</label>
+                    <input type="text" id="searchQuery" class="search-input" placeholder="찾고 싶은 주제나 키워드를 입력하세요...">
+                </div>
+                
+                <div class="form-group">
+    <label for="threshold">검색 정확도</label>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="range" id="threshold" min="0.3" max="0.9" step="0.1" value="0.5" style="flex: 1;">
+        <span id="thresholdValue" style="min-width: 80px; font-weight: 500;">0.5 (보통)</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #6b7280; margin-top: 5px;">
+        <span>관대하게</span>
+        <span>정확하게</span>
+    </div>
+</div>
+                
+                <button type="button" class="btn" onclick="searchChats()">🔍 검색하기</button>
+                
+                <div id="searchResults" class="results" style="margin-top: 20px;">
+                    <div style="padding: 20px; text-align: center; color: #6b7280;">
+                        검색어를 입력하고 검색해보세요
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 폼 제출 처리
+        document.getElementById('saveForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const summary = document.getElementById('summary').value;
+            const category = document.getElementById('category').value;
+            const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim()).filter(tag => tag);
+            const insights = document.getElementById('insights').value.split('\n').map(insight => insight.trim()).filter(insight => insight);
+            const actions = document.getElementById('actions').value.split('\n').map(action => action.trim()).filter(action => action);
+            
+            const statusDiv = document.getElementById('saveStatus');
+            statusDiv.textContent = '저장 중...';
+            statusDiv.className = 'status';
+            statusDiv.classList.remove('hidden', 'success', 'error');
+            
+            try {
+                const response = await fetch('/api/save-chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title,
+                        content,
+                        summary,
+                        category,
+                        tags,
+                        key_insights: insights,
+                        action_items: actions
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusDiv.textContent = '✅ ' + result.message;
+                    statusDiv.classList.add('success');
+                    document.getElementById('saveForm').reset();
+                } else {
+                    statusDiv.textContent = '❌ ' + result.message;
+                    statusDiv.classList.add('error');
+                }
+            } catch (error) {
+                statusDiv.textContent = '❌ 저장 중 오류가 발생했습니다.';
+                statusDiv.classList.add('error');
+            }
+        });
+        
+        // 검색 함수
+        async function searchChats() {
+            const query = document.getElementById('searchQuery').value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (!query) {
+                resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">검색어를 입력해주세요</div>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #6b7280;">검색 중...</div>';
+            
+            try {
+                const threshold = document.getElementById('threshold').value;
+const response = await fetch(`/api/search-chats?q=${encodeURIComponent(query)}&limit=10&threshold=${threshold}`);
+                const result = await response.json();
+                
+                if (result.success && result.data.length > 0) {
+                    resultsDiv.innerHTML = result.data.map(chat => `
+                        <div class="result-item" onclick="viewChat('${chat.id}')">
+                            <div class="result-title">${chat.title}</div>
+                            <div class="result-summary">${chat.summary}</div>
+                            <div class="result-meta">
+                                <span>${new Date(chat.created_at).toLocaleDateString('ko-KR')}</span>
+                                <span class="similarity">${Math.round(chat.similarity * 100)}% 유사</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #6b7280;">검색 결과가 없습니다</div>';
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">검색 중 오류가 발생했습니다</div>';
+            }
+        }
+        
+        // Enter 키로 검색
+        document.getElementById('searchQuery').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchChats();
+            }
+        });
+        
+        // 채팅 상세 보기
+        async function viewChat(id) {
+            try {
+                const response = await fetch(`/api/chats/${id}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const chat = result.data;
+                    alert(`제목: ${chat.title}\n\n내용:\n${chat.content}\n\n태그: ${chat.tags?.join(', ') || '없음'}\n카테고리: ${chat.category || '없음'}`);
+                }
+            } catch (error) {
+                alert('채팅을 불러오는 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 슬라이더 값 업데이트
+    document.getElementById('threshold').addEventListener('input', (e) => {
+        const value = e.target.value;
+        const labels = {
+            '0.3': '0.3 (매우 관대)',
+            '0.4': '0.4 (관대)', 
+            '0.5': '0.5 (보통)',
+            '0.6': '0.6 (까다로움)',
+            '0.7': '0.7 (정확)',
+            '0.8': '0.8 (매우 정확)',
+            '0.9': '0.9 (엄격)'
+        };
+        document.getElementById('thresholdValue').textContent = labels[value] || value;
+    });
+    </script>
+</body>
+</html>
