@@ -435,28 +435,24 @@ window.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     
     if (urlParams.get('source') === 'bookmarklet') {
-        // 북마클릿에서 온 데이터 자동 입력
-        const title = urlParams.get('title');
-        const content = urlParams.get('content');
-        
-        if (title) {
-            document.getElementById('title').value = title;
-        }
-        
-        if (content) {
-            document.getElementById('content').value = content;
-            
-            // 자동 요약 생성 (간단하게)
-            const summary = content.substring(0, 200) + '...';
-            document.getElementById('summary').value = summary;
-        }
-        
-        // 성공 메시지
+    const title = urlParams.get('title');
+    const isClipboard = urlParams.get('clipboard');
+    
+    if (title) {
+        document.getElementById('title').value = title;
+    }
+    
+    if (isClipboard) {
+        // 클립보드에서 가져오라는 메시지
         const statusDiv = document.getElementById('saveStatus');
-        statusDiv.textContent = '✅ 북마클릿에서 내용을 불러왔습니다!';
+        statusDiv.textContent = '📋 클립보드에서 내용을 가져왔습니다. 아래 내용 칸에 Ctrl+V로 붙여넣으세요!';
         statusDiv.className = 'status success';
         statusDiv.classList.remove('hidden');
+        
+        // 내용 칸에 포커스
+        document.getElementById('content').focus();
     }
+}
 });
 
     </script>
