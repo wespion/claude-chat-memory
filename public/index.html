@@ -238,6 +238,14 @@
                     </div>
                     
                     <div class="form-group">
+    <button type="button" id="analyzeBtn" class="btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-bottom: 15px;" onclick="analyzeWithAI()">
+        🤖 AI 자동 분석
+    </button>
+    <div id="analyzeStatus" class="status hidden"></div>
+</div>
+
+
+                    <div class="form-group">
                         <label for="summary">요약</label>
                         <textarea id="summary" placeholder="채팅 내용을 간단히 요약해주세요..."></textarea>
                     </div>
@@ -455,6 +463,62 @@ window.addEventListener('DOMContentLoaded', () => {
 }
 });
 
+// AI 분석 함수
+async function analyzeWithAI() {
+    const content = document.getElementById('content').value.trim();
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const statusDiv = document.getElementById('analyzeStatus');
+    
+    if (!content) {
+        alert('분석할 채팅 내용을 먼저 입력해주세요.');
+        return;
+    }
+    
+    // 버튼 비활성화
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = '🤖 AI 분석 중...';
+    
+    statusDiv.textContent = 'AI가 내용을 분석하고 있습니다...';
+    statusDiv.className = 'status';
+    statusDiv.classList.remove('hidden', 'success', 'error');
+    
+    try {
+        const response = await fetch('/api/analyze-chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const data = result.data;
+            
+            // 분석 결과를 폼에 자동 입력
+            document.getElementById('title').value = data.title || '';
+            document.getElementById('summary').value = data.summary || '';
+            document.getElementById('category').value = data.category || '';
+            document.getElementById('tags').value = data.tags?.join(', ') || '';
+            document.getElementById('insights').value = data.key_insights?.join('\n') || '';
+            document.getElementById('actions').value = data.action_items?.join('\n') || '';
+            
+            statusDiv.textContent = '✅ AI 분석 완료! 결과를 확인하고 저장하세요.';
+            statusDiv.classList.add('success');
+        } else {
+            statusDiv.textContent = '❌ ' + result.message;
+            statusDiv.classList.add('error');
+        }
+    } catch (error) {
+        statusDiv.textContent = '❌ 분석 중 오류가 발생했습니다.';
+        statusDiv.classList.add('error');
+    } finally {
+        // 버튼 복원
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = '🤖 AI 자동 분석';
+    }
+}
     </script>
 </body>
 </html>
