@@ -429,6 +429,36 @@ const response = await fetch(`/api/search-chats?q=${encodeURIComponent(query)}&l
         };
         document.getElementById('thresholdValue').textContent = labels[value] || value;
     });
+
+    // URL 파라미터에서 데이터 자동 입력
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.get('source') === 'bookmarklet') {
+        // 북마클릿에서 온 데이터 자동 입력
+        const title = urlParams.get('title');
+        const content = urlParams.get('content');
+        
+        if (title) {
+            document.getElementById('title').value = title;
+        }
+        
+        if (content) {
+            document.getElementById('content').value = content;
+            
+            // 자동 요약 생성 (간단하게)
+            const summary = content.substring(0, 200) + '...';
+            document.getElementById('summary').value = summary;
+        }
+        
+        // 성공 메시지
+        const statusDiv = document.getElementById('saveStatus');
+        statusDiv.textContent = '✅ 북마클릿에서 내용을 불러왔습니다!';
+        statusDiv.className = 'status success';
+        statusDiv.classList.remove('hidden');
+    }
+});
+
     </script>
 </body>
 </html>
